@@ -1,12 +1,24 @@
-import { Box, Button, Divider, Flex, Heading, HStack, SimpleGrid, VStack} from "@chakra-ui/react";
+import { 
+  Box, 
+  Button, 
+  Divider, 
+  Flex, 
+  Heading, 
+  HStack, 
+  SimpleGrid, 
+  VStack
+} from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { SubmitHandler, useForm } from "react-hook-form";
 import * as yup from 'yup';
+import { useMutation } from 'react-query';
 
 import { Input } from "../../components/Form/Input";
 import { Header } from "../../components/Header";
 import { Sidebar } from "../../components/Sidebar";
 import { validationYupResolver } from "../../utils/validationYupResolver";
+import { api } from "../../services/api";
+import { queryClient } from "../../services/queryClient";
 
 type CreateUserDataForm = {
   email: string;
@@ -30,8 +42,22 @@ export default function Create() {
   const { errors } = formState;
   const { back } = useRouter();
 
+  const createUser = useMutation(async (user: CreateUserDataForm) => {
+    await api.post('/users', {
+      user: {
+        ...user,
+        created_at: new Date()
+      }
+    });
+  }, {
+    onSuccess: () => {
+      queryClient.invalidateQueries('@dashgo/users');
+    }
+  });
+
   const handleCreate: SubmitHandler<CreateUserDataForm> = async (values) => {
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await createUser.mutateAsync(values);
+    back();
   }
 
   return (
